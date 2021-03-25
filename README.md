@@ -65,9 +65,11 @@ Some keywords to mention
 
 The overall structure can be grossly generalized as such:
 
+
 ![Overall structure](https://i.imgur.com/Vl2eedb.png)
 
 Example of how the data-structure can be translated into an actual GUI
+
 ![Structure to GUI example](https://i.imgur.com/jt5G4BW.png)
 
 ... Talk about how the size-hierarchy must be determined before doing dispatching the event
