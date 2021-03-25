@@ -1,3 +1,4 @@
+
 # Didgy's frustrating GUI adventures
 
 ## Introduction
@@ -88,7 +89,7 @@ A SizeHint is a simple structure that a Widget needs to produce. It contains dat
 
 Assume we have a similar layout L to the one above. L has 3 children; A, B, C. However, this time each children can be queried for a SizeHint. For simplicity in this example, let's define a SizeHint as a value that says how wide the widget wishes to be. The process will be something like the following:
 
-![Imgur](https://i.imgur.com/6AJx7me.png)
+![Imgur](https://raw.githubusercontent.com/Didgy74/Didgy74.github.io/7b3ebb71c4b6e8b86239b9d6b83111f19683785d/img/Non-uniform%20Size%20Distribution.svg)
 
 The formula for this layout distribution is
 ```
@@ -105,11 +106,13 @@ Assume we have a layout L with 3 children, A, B and C. Layout L stacks it's chil
 
 This is pretty straightforward and easy to expect. The problem arises when the GUI structure is currently is dispatching an event. When this type of layout dispatches an event, it will have to sequentially propagate it to it's children. The problem is that when a child handles the event, it might destroy itself or another child within that same layout. This enforces a screenspace redistribution, and when it's time for the *next* child to handle the event, it will be operating with inconsistent screenspace values. This essentially turns into a type of undefined behavior. Let me explain such a scenario with the following diagram:
 
-![Removing a node mid-event](https://raw.githubusercontent.com/Didgy74/Didgy74.github.io/82341fe727d902de6b63c998baa9e4882e40e786/img/Removing%20node%20midevent.svg)
+![Removing a node mid-event](https://raw.githubusercontent.com/Didgy74/Didgy74.github.io/7b3ebb71c4b6e8b86239b9d6b83111f19683785d/img/Removing%20node%20midevent.svg)
+
+The problem here is that B accepts the event and handles it as it should. However, since the size-configuration of the layout is updated immediately, then C will have it's position and size modified. Therefore C will now also accept the event and handle it, from C's point of view it functions correctly. This is a type of behavior we *don't* want, as it means the behavior of the GUI becomes unpredictable from a programming point of view.
 
 The solution I came up with for this problem is the following. A Layout should not update the screenspace-distributions of it's children until *all* the children are done handling the event.
 
-![Removing a node mid-event, revised](https://i.imgur.com/ZcxEeHm.png)
+![Removing a node mid-event, revised](https://raw.githubusercontent.com/Didgy74/Didgy74.github.io/856d24653392989955999fa3c0c22c30e9bf1960/img/Removing%20a%20node%20mid-event%20-%20Revised.svg)
 
 In terms of implementing layouts that dispatch events, implementing the following rule is highly encouraged to avoid unexpected behavior. That is to say, you can freely add and remove widgets to your layout and expect them to be available from the layout immediately, but from a screenspace point-of-view the Layout pretends as if nothing has changed until all children are done handling the current event being processed.
 
@@ -127,8 +130,8 @@ enum class WindowID; // Opaque handle/integer
 struct WindowResizeEvent
 {
 	WindowID windowId;
-	unsigned int width;
-	unsigned int height;
+	int width;
+	int height;
 };
 
 class Context
