@@ -1,14 +1,11 @@
-
 # Didgy's frustrating GUI adventures
 
 ## Introduction
 This project started when I encountered a problem when working on my other project, DEngine. DEngine is a lightweight game engine oriented towards mobile 2D games. A main component of this engine is to have a level editor you could run directly on your tablet, do your level design, and playtest your level instantly from your tablet device. This level editor also had to work on Windows and Linux. With this functionality in mind I started testing several GUI libraries and frameworks, but these existing solutions all came short for exactly what I had in mind. After trying out libraries for over a month, I decided to roll my own solution.
 
-I might compile a list of GUI libraries I tried out with a list of their pros and cons in another blog post.
-
 Before I go on any further, I want to clarify that for the vast majority of hobby developers like myself, rolling your own GUI solution is **not** worth the effort and I do **not** recommend you do so.
 
-This GUI project and DEngine is not a commercial product and is only developed as a learning experience for myself. Since this is not a framework/library, but rather a set of tools embedded into the DEngine project, I will sometimes refer to the GUI code as a "GUI toolkit" or "GUI solution".
+This GUI project and DEngine is not a commercial product and is only developed as a learning experience for myself. Since this is not a framework/library but rather a set of tools embedded into the DEngine project, I will sometimes refer to the GUI code as a "GUI toolkit" or "GUI solution".
 
 The following design presented is still very much a work in progress, and many aspects are still up for debate.
 
@@ -19,7 +16,10 @@ This blog post serves as an exercise for writing and an overview of the design I
 Insert a small GIF or mp4 that showcases DEngine running the GUI toolkit.
 
 ## Source code
-The source code is currently embedded into my DEngine project, of which the repo can be found here https://github.com/Didgy74/DEngine. The GUI toolkit code can be found in the subfolders `include/DEngine/Gui` and `src/DEngine/Gui` or by clicking these links https://github.com/Didgy74/DEngine/tree/master/include/DEngine/Gui and https://github.com/Didgy74/DEngine/tree/master/src/DEngine/Gui.
+The source code is currently embedded into my DEngine project, of which the repo can be found here https://github.com/Didgy74/DEngine. The GUI toolkit code can be found in the subfolders `include/DEngine/Gui` and `src/DEngine/Gui` or by clicking these links 
+
+[https://github.com/Didgy74/DEngine/tree/master/include/DEngine/Gui](https://github.com/Didgy74/DEngine/tree/master/include/DEngine/Gui)
+[https://github.com/Didgy74/DEngine/tree/master/src/DEngine/Gui](https://github.com/Didgy74/DEngine/tree/master/src/DEngine/Gui)
 
 ## Requirements for the solution
 During my time trying out other solutions, I built myself a very specific idea of what requirements I wanted the solution to fulfill. I compiled a list of the following:
@@ -43,12 +43,6 @@ Things I did not want to focus on:
 - Ease of use
 - Theming (Possibly in the future)
 - Animations (Possibly in the future)
-
-Other stuff (gonna take it out or reword it)
-- Not a framework, it's a library
-- As little state as possible
-- Retained mode
-- Support for multiple windows
 	
 ## Initial architecture decision
 My first decision was choosing between immediate-mode and retained-mode. I was not confident I could write immediate mode in such a way that it would be power-efficient and perfectly respect order of events, while also providing great support for on-screen keyboards. I ended up choosing a retained-mode, my goal was to describe the GUI using a structure of data and calling appropriate callbacks when events called for it.
@@ -113,11 +107,11 @@ This is pretty straightforward and easy to expect. The problem arises when the G
 
 ![Removing a node mid-event](https://raw.githubusercontent.com/Didgy74/Didgy74.github.io/82341fe727d902de6b63c998baa9e4882e40e786/img/Removing%20node%20midevent.svg)
 
+The solution I came up with for this problem is the following. A Layout should not update the screenspace-distributions of it's children until *all* the children are done handling the event.
+
 ![Removing a node mid-event, revised](https://i.imgur.com/ZcxEeHm.png)
 
-In terms of implementing layouts that dispatch events, implementing the following rule is highly encouraged to avoid unexpected behavior. When in the process of dispatching events, size-allocations must not be updated.
-
-That is to say, you can freely add and remove widgets to your layout and expect them to be available from the layout immediately, but the layout will not dispatch events to them until *after* the current event is done being dispatched.
+In terms of implementing layouts that dispatch events, implementing the following rule is highly encouraged to avoid unexpected behavior. That is to say, you can freely add and remove widgets to your layout and expect them to be available from the layout immediately, but from a screenspace point-of-view the Layout pretends as if nothing has changed until all children are done handling the current event being processed.
 
 ## Avoiding direct window and input management
 I mentioned earlier that I did not choose to use 3rd party libraries such as Dear ImGui, but I still found parts of these libraries that I did like. I especially liked the approach to windowing and rendering, but for now I want to talk about the windowing and input part.
@@ -128,10 +122,10 @@ Fundamentally, the GUI logic only really cares about the hard data. Where is the
 
 Updating the data for a window is as simple as passing in a struct with the window handle and the new data. In pseudo-code:
 ```cpp
-enum  class  WindowID;
+enum class WindowID; // Opaque handle/integer
 
 struct WindowResizeEvent
-{ 
+{
 	WindowID windowId;
 	unsigned int width;
 	unsigned int height;
@@ -154,7 +148,6 @@ WindowResizeEvent newEvent;
 newEvent.windowId = windowA;
 newEvent.width = newWidth;
 newEvent.height = newHeight;
-
 myContext.PushEvent(newEvent);
 ```
 During the `myContext.PushEvent(newEvent)` call, the `Context` will update the size of the window in question and dispatch the event to widgets, which will in turn call any callbacks set by the user.
@@ -190,3 +183,5 @@ When done, you can then *optionally*
  - Request rendering data from the `Context`
 
 This puts the flow of the app very much in the hands of the user. There is no hidden rendering thread. There is no uncertainty of what is thread-safe or not. There is no uncertainty of when the state of the GUI is changed. There is no uncertainty in what callbacks you can expect to be called.
+
+... Talk about how this idea is transferred into how updates are carried out in code, i.e when modifiying a member of a widget/layout.
