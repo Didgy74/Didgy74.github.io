@@ -64,6 +64,7 @@ Some keywords to mention
 - **SizeHint** - A struct that lets a widget send a hint to it's parent container to describe how it wants to be sized. Widgets generally have no way to guarantee size constraints, but they can use hints to incentivize the owning layout(s).
 
 The overall structure can be grossly generalized as such:
+
 ![Overall structure](https://i.imgur.com/Vl2eedb.png)
 
 Example of how the data-structure can be translated into an actual GUI
@@ -107,9 +108,12 @@ The next problem to solve was how and when the GUI should reflect a change in ho
 
 Assume we have a layout L with 3 children, A, B and C. Layout L stacks it's children horizontally, and distributes the space equally always. Our first example shows how we expect the GUI to behave outside the context of an event being dispatched. A typical resize in the event of a widget being removed would be fairly simple, like so:
 
-![Resize behavior](https://raw.githubusercontent.com/Didgy74/Didgy74.github.io/d33cddf2866d0a975275a97e18433d833f23c66a/img/Removing_node_midevent.svg)
+![Resize behavior](https://raw.githubusercontent.com/Didgy74/Didgy74.github.io/82341fe727d902de6b63c998baa9e4882e40e786/img/Removing%20node.svg)
+
 This is pretty straightforward and easy to expect. The problem arises when the GUI structure is currently is dispatching an event. When this type of layout dispatches an event, it will have to sequentially propagate it to it's children. The problem is that when a child handles the event, it might destroy itself or another child within that same layout. This enforces a screenspace redistribution, and when it's time for the *next* child to handle the event, it will be operating with inconsistent screenspace values. This essentially turns into a type of undefined behavior. Let me explain such a scenario with the following diagram:
-![Removing a node mid-event](https://svgshare.com/i/VR_.svg)
+
+![Removing a node mid-event](https://raw.githubusercontent.com/Didgy74/Didgy74.github.io/82341fe727d902de6b63c998baa9e4882e40e786/img/Removing%20node%20midevent.svg)
+
 ![Removing a node mid-event, revised](https://i.imgur.com/ZcxEeHm.png)
 
 In terms of implementing layouts that dispatch events, implementing the following rule is highly encouraged to avoid unexpected behavior. When in the process of dispatching events, size-allocations must not be updated.
@@ -187,5 +191,3 @@ When done, you can then *optionally*
  - Request rendering data from the `Context`
 
 This puts the flow of the app very much in the hands of the user. There is no hidden rendering thread. There is no uncertainty of what is thread-safe or not. There is no uncertainty of when the state of the GUI is changed. There is no uncertainty in what callbacks you can expect to be called.
-
-
