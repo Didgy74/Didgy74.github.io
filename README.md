@@ -1,3 +1,4 @@
+
 # Didgy's frustrating GUI adventures
 
 ## Introduction
@@ -65,14 +66,10 @@ Some keywords to mention
 
 The overall structure can be grossly generalized as such:
 
-
-![Overall structure](https://i.imgur.com/Vl2eedb.png)
+![Overall structure](https://raw.githubusercontent.com/Didgy74/Didgy74.github.io/10566866a8a2ae3ef8b2a2b275ff7e1d59b8cbc6/img/General%20structure.svg)
 
 Example of how the data-structure can be translated into an actual GUI
-
-![Structure to GUI example](https://i.imgur.com/jt5G4BW.png)
-
-... Talk about how the size-hierarchy must be determined before doing dispatching the event
+![Structure to GUI example](https://raw.githubusercontent.com/Didgy74/Didgy74.github.io/10566866a8a2ae3ef8b2a2b275ff7e1d59b8cbc6/img/Structure%20to%20GUI.svg)
 
 ## Automatic resizing
 A deficiency I have seen in several applications is the inability to scale correctly to high pixel density-displays, or very big/small displays. The goal I have in mind here is to allow the GUI to scale itself up and down to any display size or to any pixel-density, by defining behavior rules in each widget.
@@ -83,7 +80,7 @@ To figure out the exact problem and build a solution, I had to work iteratively.
 
 Assume we have a layout L. It has three widgets A, B, C and L's job is to place these widgets next to each other horizontally in a given screenspace, dividing the space equally. Lets assume L is given a screenspace of dimensions 1x30 units.
 
-![Uniform layout distribution](https://i.imgur.com/2OyGLRf.png)
+![Uniform layout distribution](https://raw.githubusercontent.com/Didgy74/Didgy74.github.io/10566866a8a2ae3ef8b2a2b275ff7e1d59b8cbc6/img/Equal%20screenspace%20distribution.svg)
 
 This results in a very simple design that scales to literally any display. The formula is simply: 
 ```
