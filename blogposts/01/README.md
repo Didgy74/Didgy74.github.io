@@ -20,6 +20,8 @@ This blog post serves as an exercise for writing and an overview of the design I
 
 https://user-images.githubusercontent.com/25203601/135811833-9e5433c1-609c-44c4-9626-af4ea9e809c0.mp4
 
+![Showcase video](https://user-images.githubusercontent.com/25203601/135811833-9e5433c1-609c-44c4-9626-af4ea9e809c0.mp4)
+
 
 ## Source code
 
