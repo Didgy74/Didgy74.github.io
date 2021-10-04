@@ -16,7 +16,7 @@ This blog post serves as an exercise for writing and an overview of the design I
 
 ## Example of the GUI
 
-[Screenshot of DEngine](https://raw.githubusercontent.com/Didgy74/Didgy74.github.io/main/blogposts/01/screenshot.jpg)
+[Screenshot of DEngine](screenshot.png)
 
 [Video showcase of DEngine](showcase.mp4)
 
