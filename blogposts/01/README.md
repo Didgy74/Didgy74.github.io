@@ -16,9 +16,9 @@ This blog post serves as an exercise for writing and an overview of the design I
 
 ## Example of the GUI
 
-[Screenshot of DEngine](screenshot.png)
+![screenshot](https://user-images.githubusercontent.com/25203601/135811799-707a924e-367b-4bd5-ad99-af455f3f2298.png)
 
-[Video showcase of DEngine](showcase.mp4)
+https://user-images.githubusercontent.com/25203601/135811833-9e5433c1-609c-44c4-9626-af4ea9e809c0.mp4
 
 
 ## Source code
