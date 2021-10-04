@@ -45,7 +45,7 @@ Keep in mind that Layouts can contain nested Layouts. Such as a horizontal Stack
 
 In this diagram, the SizeHint 
 
-![Diagram showing example of a nested StackLayout](https://raw.githubusercontent.com/Didgy74/Didgy74.github.io/main/BlogPosts/02/StackLayoutExample.svg)
+![Diagram showing example of a nested StackLayout](stacklayout_example.svg)
 
 Note: While the dimensions are correct, the geometry is approximated only.
 

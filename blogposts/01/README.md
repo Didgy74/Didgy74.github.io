@@ -1,7 +1,8 @@
-
 # Didgy's frustrating GUI adventures
 
+
 ## Introduction
+
 This project started when I encountered a problem when working on my other project, DEngine. DEngine is a lightweight game engine oriented towards mobile 2D games. A main component of this engine is to have a level editor you could run directly on your tablet, do your level design, and playtest your level instantly from your tablet device. This level editor also had to work on Windows and Linux. With this functionality in mind I started testing several GUI libraries and frameworks, but these existing solutions all came short for exactly what I had in mind. After trying out libraries for over a month, I decided to roll my own solution.
 
 Before I go on any further, I want to clarify that for the vast majority of hobby developers like myself, rolling your own GUI solution is **not** worth the effort and I do **not** recommend you do so.
@@ -12,17 +13,24 @@ The following design presented is still very much a work in progress, and many a
 
 This blog post serves as an exercise for writing and an overview of the design I have made. It also serves as a way for future potential employers to have a better overview of my skillset and how I work.
 
+
 ## Example of the GUI
 
-Insert a small GIF or mp4 that showcases DEngine running the GUI toolkit.
+[Screenshot of DEngine](screenshot.jpg)
+
+[Video showcase of DEngine](showcase.mp4)
+
 
 ## Source code
+
 The source code is currently embedded into my DEngine project, of which the repo can be found here https://github.com/Didgy74/DEngine. The GUI toolkit code can be found in the subfolders `include/DEngine/Gui` and `src/DEngine/Gui` or by clicking these links 
 
 [https://github.com/Didgy74/DEngine/tree/master/include/DEngine/Gui](https://github.com/Didgy74/DEngine/tree/master/any/include/DEngine/Gui)
 [https://github.com/Didgy74/DEngine/tree/master/src/DEngine/Gui](https://github.com/Didgy74/DEngine/tree/master/any/src/DEngine/Gui)
 
+
 ## Requirements for the solution
+
 During my time trying out other solutions, I built myself a very specific idea of what requirements I wanted the solution to fulfill. I compiled a list of the following:
 
 - Tight mobile/touch integration but with support for desktop
@@ -31,7 +39,6 @@ During my time trying out other solutions, I built myself a very specific idea o
 - Does GUI logic and *only* GUI logic
 	- It does no windowing interfacing or input handling
 	- It does no actual rendering, only produces data that can be translated to rendering
-	- These points greatly enhance modularity
 - Does not hijack execution flow
 - Performant
 	- Runs effortlessly on mid-end Android tablets.
@@ -45,7 +52,9 @@ Things I did not want to focus on:
 - Theming (Possibly in the future)
 - Animations (Possibly in the future)
 	
+	
 ## Initial architecture decision
+
 My first decision was choosing between immediate-mode and retained-mode. I was not confident I could write immediate mode in such a way that it would be power-efficient and perfectly respect order of events, while also providing great support for on-screen keyboards. I ended up choosing a retained-mode, my goal was to describe the GUI using a structure of data and calling appropriate callbacks when events called for it.
 
 Before I started landing on design choices, I tried looking into how retained-mode GUIs are designed. I came across a few, such as model-view-controller but ultimately I did not understand how they worked. I ended up with a design that models the data in a similar fashion to GTK and Qt, as that is the one I was personally most familiar with and made the most sense. This sort of retained GUI is often referred to as "Smart widget" style.
@@ -61,12 +70,14 @@ Some keywords to mention
 
 The overall structure can be grossly generalized as such:
 
-![Overall structure](https://raw.githubusercontent.com/Didgy74/Didgy74.github.io/10566866a8a2ae3ef8b2a2b275ff7e1d59b8cbc6/img/General%20structure.svg)
+![Overall structure](general_structure.svg)
 
 Example of how the data-structure can be translated into an actual GUI
-![Structure to GUI example](https://raw.githubusercontent.com/Didgy74/Didgy74.github.io/10566866a8a2ae3ef8b2a2b275ff7e1d59b8cbc6/img/Structure%20to%20GUI.svg)
+![Structure to GUI example](structure_to_gui.svg)
+
 
 ## Automatic resizing
+
 A deficiency I have seen in several applications is the inability to scale correctly to high pixel density-displays, or very big/small displays. The goal I have in mind here is to allow the GUI to scale itself up and down to any display size or to any pixel-density, by defining behavior rules in each widget.
 
 All applications have a minimum size they need in order to function at all. However, an application's GUI should, in theory, be able to scale upwards infinitely. When you have a single widget, you can set it to the window's extents and have it scale infinitely right away. The problem becomes more complex when you have multiple widgets that need to share screenspace.
@@ -75,12 +86,14 @@ To figure out the exact problem and build a solution, I had to work iteratively.
 
 Assume we have a layout L. It has three widgets A, B, C and L's job is to place these widgets next to each other horizontally in a given screenspace, dividing the space equally. Lets assume L is given a screenspace of dimensions 1x30 units.
 
-![Uniform layout distribution](https://raw.githubusercontent.com/Didgy74/Didgy74.github.io/10566866a8a2ae3ef8b2a2b275ff7e1d59b8cbc6/img/Equal%20screenspace%20distribution.svg)
+![Diagram of uniform screenspace distribution](uniform_screenspace_distribution.svg)
 
 This results in a very simple design that scales to literally any display. The formula is simply: 
+
 ```
 childWidth = inputWidth / childCount
-``` 
+```
+
 However, this does not give you any flexibility in how the GUI will scale. For example, you don't always want to scale something beyond a specific size, and you might have some requirements as to how small the widget can be for it to be functional at all.
 
 So the next problem to solve is to give a widget more control over how it should be sized. There's one fundamental idea I had to learn when working on this. The only absolute screenspace is the window itself. The size a widget is eventually given is entirely dependant on the window and layouts it exists within. Therefore a widget can never demand a size and expect it to be given that size. At best, the widget can only ever give soft hints as to how a parent layout should distribute and prioritize screenspace between children. Enter the SizeHint structure.
@@ -89,7 +102,7 @@ A SizeHint is a simple structure that a Widget needs to produce. It contains dat
 
 Assume we have a similar layout L to the one above. L has 3 children; A, B, C. However, this time each children can be queried for a SizeHint. For simplicity in this example, let's define a SizeHint as a value that says how wide the widget wishes to be. The process will be something like the following:
 
-![Imgur](https://raw.githubusercontent.com/Didgy74/Didgy74.github.io/7b3ebb71c4b6e8b86239b9d6b83111f19683785d/img/Non-uniform%20Size%20Distribution.svg)
+![Diagram of nonuniform screenspace distribution](nonuniform_screenspace_distribution.svg)
 
 The formula for this layout distribution is
 ```
@@ -97,26 +110,30 @@ childWidth = sizeHint * sum(childrenSizeHints) / inputWidth
 ```
 While the details of may change over time as my design matures, I can see one general pattern emerging. When building the actual size-distribution, the process in done in two stages: The *hint-gather stage* and the *allocation stage*. In essence; a Layout will gather it's children's SizeHints, and based on values such as the min-max and sum of the hints, it will enter the allocation where runs it's algorithm to distribute the actual screenspace. 
 
+
 ## Resizing continued: Dynamic GUIs
+
 The next problem to solve was how and when the GUI should reflect a change in how size is distributed. More specifically, I need to take into account that the GUI data-structure can be modified while it's dispatching events. Let me walk you through an example of the problem.
 
 Assume we have a layout L with 3 children, A, B and C. Layout L stacks it's children horizontally, and distributes the space equally always. Our first example shows how we expect the GUI to behave outside the context of an event being dispatched. A typical resize in the event of a widget being removed would be fairly simple, like so:
 
-![Resize behavior](https://raw.githubusercontent.com/Didgy74/Didgy74.github.io/82341fe727d902de6b63c998baa9e4882e40e786/img/Removing%20node.svg)
+![Resize behavior](removing_node.svg)
 
 This is pretty straightforward and easy to expect. The problem arises when the GUI structure is currently is dispatching an event. When this type of layout dispatches an event, it will have to sequentially propagate it to it's children. The problem is that when a child handles the event, it might destroy itself or another child within that same layout. This enforces a screenspace redistribution, and when it's time for the *next* child to handle the event, it will be operating with inconsistent screenspace values. This essentially turns into a type of undefined behavior. Let me explain such a scenario with the following diagram:
 
-![Removing a node mid-event](https://raw.githubusercontent.com/Didgy74/Didgy74.github.io/7b3ebb71c4b6e8b86239b9d6b83111f19683785d/img/Removing%20node%20midevent.svg)
+![Removing a node mid-event](removing_node_midevent.svg)
 
 The problem here is that B accepts the event and handles it as it should. However, since the size-configuration of the layout is updated immediately, then C will have it's position and size modified. Therefore C will now also accept the event and handle it, from C's point of view it functions correctly. This is a type of behavior we *don't* want, as it means the behavior of the GUI becomes unpredictable from a programming point of view.
 
 The solution I came up with for this problem is the following. A Layout should not update the screenspace-distributions of it's children until *all* the children are done handling the event.
 
-![Removing a node mid-event, revised](https://raw.githubusercontent.com/Didgy74/Didgy74.github.io/856d24653392989955999fa3c0c22c30e9bf1960/img/Removing%20a%20node%20mid-event%20-%20Revised.svg)
+![Removing a node mid-event, revised](removing_node_midevent_revised.svg)
 
 In terms of implementing layouts that dispatch events, implementing the following rule is highly encouraged to avoid unexpected behavior. That is to say, you can freely add and remove widgets to your layout and expect them to be available from the layout immediately, but from a screenspace point-of-view the Layout pretends as if nothing has changed until all children are done handling the current event being processed.
 
+
 ## Avoiding direct window and input management
+
 I mentioned earlier that I did not choose to use 3rd party libraries such as Dear ImGui, but I still found parts of these libraries that I did like. I especially liked the approach to windowing and rendering, but for now I want to talk about the windowing and input part.
 
 One of the things I disliked with some of the GUI frameworks/libraries I tried is the fact that they enforce you to run their windowing and input solution. This makes them fundamentally less modular. I'm sure they have their reasons, to have a tight OS integration you need a fairly complicated connection between the windowing and GUI, and have a user implement that connection themselves can be a complicated endeavor. It makes the distance of going from no GUI to functional GUI longer and is less user-friendly overall. However, that's not a consideration in my project. My goal is to decouple windowing and GUI logic completely even if it means complicating the integration process.
@@ -159,7 +176,9 @@ The advantage to doing things this way is that the windowing interaction is now 
 
 This concept is directly applied to input also, such as cursor input and touch input. Gesture input has not yet been designed.
 
+
 ## Decoupling GUI from rendering
+
 This is yet another part of Dear ImGui that I did like. The idea is to avoid having the GUI `Context` own a OpenGL context, Vulkan instance or the DirectX equivalent. I also want to avoid having the GUI toolkit making any specific calls into any of these APIs. If I keep everything in user-space without any platform-specific APIs, supporting a new platform is a matter of implementing a new backend, (hopefully) without modifying any of the actual GUI code. In the spirit of making things modular and simplifying the execution flow, widgets do not render anything when handling events, they simply update their state so they can push render-commands later in a "rendering stage".
 
 Fundamentally, I can think of two solutions:
@@ -174,7 +193,9 @@ In any case a standalone GUI library would have to at the very least provide ref
 
 It should be noted: Currently in the source code, the GUI toolkit just outputs data that the rendering module can read directly. This is a benefit from the GUI toolkit being directly embedded in the project, but in a standalone library this would be using it's own type-definitions and pseudo-code for reference shaders.
 
+
 ## Transparent execution flow
+
 With these designs in mind, it's very easy to control when the GUI does anything. By combining the data-driven event design and the rendering design, the execution flow of the entire toolkit comes down to
 
 For every event:
