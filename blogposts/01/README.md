@@ -1,22 +1,29 @@
-# Didgy's frustrating GUI adventures
+
+# GUI Blog Post #01
+Date written: August 2021
+
+# Initial solution thoughts
 
 
 ## Introduction
 
 This project started when I encountered a problem when working on my other project, DEngine. DEngine is a lightweight game engine oriented towards mobile 2D games. A main component of this engine is to have a level editor you could run directly on your tablet, do your level design, and playtest your level instantly from your tablet device. This level editor also had to work on Windows and Linux. With this functionality in mind I started testing several GUI libraries and frameworks, but these existing solutions all came short for exactly what I had in mind. After trying out libraries for over a month, I decided to roll my own solution.
 
-Before I go on any further, I want to clarify that for the vast majority of hobby developers like myself, rolling your own GUI solution is **not** worth the effort and I do **not** recommend you do so.
+Before I go on any further, I want to clarify that for the vast majority of hobby developers like myself, rolling your own GUI solution is **not** worth the effort and I do **not** recommend you do so. This GUI project and DEngine is not a commercial product and is only developed as a learning experience for myself.
 
-This GUI project and DEngine is not a commercial product and is only developed as a learning experience for myself. Since this is not a framework/library but rather a set of tools embedded into the DEngine project, I will sometimes refer to the GUI code as a "GUI toolkit" or "GUI solution".
-
-The following design presented is still very much a work in progress, and many aspects are still up for debate.
+Since this is not a framework/library but rather a set of tools embedded into the DEngine project, I will sometimes refer to the GUI code as a "GUI toolkit" or "GUI solution". The following design presented is still very much a work in progress, and many aspects are still up for debate.
 
 This blog post serves as an exercise for writing and an overview of the design I have made. It also serves as a way for future potential employers to have a better overview of my skillset and how I work.
 
 
 ## Example of the GUI
 
+This is an example of what the GUI can do as of October 2021.
+
+First a screenshot
 ![screenshot](https://user-images.githubusercontent.com/25203601/135811799-707a924e-367b-4bd5-ad99-af455f3f2298.png)
+
+You can find a video below presenting the various features of DEngine, where this GUI is used. 
 
 https://user-images.githubusercontent.com/25203601/135811833-9e5433c1-609c-44c4-9626-af4ea9e809c0.mp4
 
@@ -31,31 +38,52 @@ The source code is currently embedded into my DEngine project, of which the repo
 [https://github.com/Didgy74/DEngine/tree/master/src/DEngine/Gui](https://github.com/Didgy74/DEngine/tree/master/any/src/DEngine/Gui)
 
 
-## Requirements for the solution
+# Requirements for the solution
 
-During my time trying out other solutions, I built myself a very specific idea of what requirements I wanted the solution to fulfill. I compiled a list of the following:
+During my time trying out other solutions, I built myself a very specific idea of what requirements I wanted my solution to fulfill. I compiled a list.
 
-- Tight mobile/touch integration but with support for desktop
-	- Support for on-screen keyboard supplied by the OS as well as auto-suggestions
-	- Support for rendering around screen decorations from OS, such as navigation and status bar on Android
-- Does GUI logic and *only* GUI logic
-	- It does no windowing interfacing or input handling
-	- It does no actual rendering, only produces data that can be translated to rendering
-- Does not hijack execution flow
+
+## Top priorities
+
+### Convergent platform support for both mobile and desktop.
+
+- Support for on-screen keyboard supplied by the OS as well as auto-suggestions.
+- Support for rendering around screen decorations from OS, such as navigation and status bar on Android
+
+
+### Does GUI logic and *only* GUI logic
+
+- This means it only handles events and calls the appropriate event callbacks
+- It does direct-to-platform windowing interfacing or input handling. All this will go through a sofware-layer with no usage platform-specific APIs
+- It does no actual rendering, only produces data that can be translated to rendering
+
+
+### Does not hijack execution flow
+
+- There should be no heavy hidden operations when doing seamingly simple operations
 - Performant
 	- Runs effortlessly on mid-end Android tablets.
-	- Is "hyper-responsive"
+	- Is hyper-responsive. The user should never have to wait for processing to finish when interacting with the GUI.
 - No global state
-- Respect order of events
-- Automatic resizing of widgets
+- Respect order of events entirely
 
-Things I did not want to focus on:
+
+### Automatic resizing of widgets
+
+- The architecture should support a top-notch automatic layouting engine, where everything can be automatically sized based on contents.
+
+
+## Things that will be prioritized later
+
+- Theming
+- Animations
+
+
+## Things I did not want to focus on:
 - Ease of use
-- Theming (Possibly in the future)
-- Animations (Possibly in the future)
-	
-	
-## Initial architecture decision
+
+
+# Initial architecture decision
 
 My first decision was choosing between immediate-mode and retained-mode. I was not confident I could write immediate mode in such a way that it would be power-efficient and perfectly respect order of events, while also providing great support for on-screen keyboards. I ended up choosing a retained-mode, my goal was to describe the GUI using a structure of data and calling appropriate callbacks when events called for it.
 
@@ -143,30 +171,30 @@ One of the things I disliked with some of the GUI frameworks/libraries I tried i
 Fundamentally, the GUI logic only really cares about the hard data. Where is the window, how big is it, where is our cursor and si in. I decided early on that the easiest way for this was to represent a window as an opaque handle in GUI code. This means that the GUI only ever cares about the handle and the data associated with it. The external code, feeding window updates into the GUI, can pass this opaque handle along to reference the correct window. Other than that we also have a few callbacks that lets the GUI generate new windows when it wants to, but that's not the important right now.
 
 Updating the data for a window is as simple as passing in a struct with the window handle and the new data. In pseudo-code:
-```cpp
-enum class WindowID; // Opaque handle/integer
+```
+enum class GUI::WindowID; // Opaque handle (integer)
 
-struct WindowResizeEvent
+struct GUI::WindowResizeEvent
 {
 	WindowID windowId;
 	int width;
 	int height;
 };
 
-class Context
+class GUI::Context
 {
-	void PushEvent(WindowMoveEvent);
+	void PushEvent(GUI::WindowMoveEvent);
 	
 	// ... Lots of other methods ...
 }:
 
 // Usage
 
-Context myContext = // Initialize...
-WindowID windowA = // Initialize...
+GUI::Context myContext = // Initialize...
+GUI::WindowID windowA = // Initialize...
 
 // We detected our window was resized, now we push the update
-WindowResizeEvent newEvent;
+GUI::WindowResizeEvent newEvent;
 newEvent.windowId = windowA;
 newEvent.width = newWidth;
 newEvent.height = newHeight;
@@ -176,10 +204,10 @@ During the `myContext.PushEvent(newEvent)` call, the `Context` will update the s
 
 The advantage to doing things this way is that the windowing interaction is now completely data-driven. There are no special hooks into platform specific APIs or anything of the sort. You can also build your own queue of events and batch their submission to the `Context`. Additionally, you can even create virtual windows! Windows that only exist in memory and has no actual on-screen counterpart. Though I am early into the development phase here, I am convinced that by keeping everything data-driven and with no platform-specific APIs in play, I can keep this code both modular and cross-platform moving forward.
 
-This concept is directly applied to input also, such as cursor input and touch input. Gesture input has not yet been designed.
+This concept is directly applied to input also, such as cursor input and touch input. Gesture input has not yet been designed but is planned.
 
 
-## Decoupling GUI from rendering
+# Decoupling GUI from rendering
 
 This is yet another part of Dear ImGui that I did like. The idea is to avoid having the GUI `Context` own a OpenGL context, Vulkan instance or the DirectX equivalent. I also want to avoid having the GUI toolkit making any specific calls into any of these APIs. If I keep everything in user-space without any platform-specific APIs, supporting a new platform is a matter of implementing a new backend, (hopefully) without modifying any of the actual GUI code. In the spirit of making things modular and simplifying the execution flow, widgets do not render anything when handling events, they simply update their state so they can push render-commands later in a "rendering stage".
 
@@ -187,7 +215,7 @@ Fundamentally, I can think of two solutions:
  - A polymorphic or callback-based interface that each widget pushes commands to
  - Having the `Context` build a struct filled with i.e vectors that contain data a renderer can translate into draw-calls
 
-Either of these is only executed when the user requests it from the `Context`. In my current implementation I've opted for the second option, but in the future I believe I will change to the first since it allows the second to be implemented on top of the first. (Jeez, this was a terrible sentence, fix it pl0x)
+Either of these is only executed when the user requests it from the `Context`. In my current implementation I've opted for the second option, but in the future I believe I will change to the first option since it allows more fexibility.
 
 This approach puts the actual rendering into the user's hands. Alternatively, if the GUI toolkit becomes a standalone library in the future, it can provide an example or reference implementation so the user can get started building a simple GUI app right away.
 
@@ -196,18 +224,25 @@ In any case a standalone GUI library would have to at the very least provide ref
 It should be noted: Currently in the source code, the GUI toolkit just outputs data that the rendering module can read directly. This is a benefit from the GUI toolkit being directly embedded in the project, but in a standalone library this would be using it's own type-definitions and pseudo-code for reference shaders.
 
 
-## Transparent execution flow
+# Decoupling GUI from *text* rendering
+
+Text rendering is a particularly complex topic when it comes to the GUI. Much too complex for me to even touch upon in this blog post, but one issue in particular is that multiple platforms will want to use different text rendering solutions. To keep this short, my plan is essentially to put text rendering purely in the hands of the user of the library.
+
+That is to say, the GUI will only care about information such as the outer bounds of a given text, and will only care about that when doing things.
+
+
+# Transparent execution flow
 
 With these designs in mind, it's very easy to control when the GUI does anything. By combining the data-driven event design and the rendering design, the execution flow of the entire toolkit comes down to
 
 For every event:
+
 1. Push event to `Context`
 2. The structure calls the appropriate callbacks
-3. The structure updates it's internal state
+3. The structure updates its internal state
 
 When done, you can then *optionally*
- - Request rendering data from the `Context`
+
+4. Request rendering data from the `Context`
 
 This puts the flow of the app very much in the hands of the user. There is no hidden rendering thread. There is no uncertainty of what is thread-safe or not. There is no uncertainty of when the state of the GUI is changed. There is no uncertainty in what callbacks you can expect to be called.
-
-... Talk about how this idea is transferred into how updates are carried out in code, i.e when modifiying a member of a widget/layout.
