@@ -25,9 +25,10 @@ First a screenshot
 
 You can find a video below presenting the various features of DEngine, where this GUI is used. 
 
-https://user-images.githubusercontent.com/25203601/135811833-9e5433c1-609c-44c4-9626-af4ea9e809c0.mp4
+[Showcase video MP4](https://user-images.githubusercontent.com/25203601/135811833-9e5433c1-609c-44c4-9626-af4ea9e809c0.mp4)
 
-![Showcase video](https://user-images.githubusercontent.com/25203601/135811833-9e5433c1-609c-44c4-9626-af4ea9e809c0.mp4)
+Below is a link preview of the same video. It doesn't work on all web browsers/Markdown renderers.
+![Showcase video with preview](https://user-images.githubusercontent.com/25203601/135811833-9e5433c1-609c-44c4-9626-af4ea9e809c0.mp4)
 
 
 ## Source code
