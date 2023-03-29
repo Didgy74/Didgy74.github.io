@@ -15,13 +15,16 @@ Additionally, I've already implemented many of these ideas in my C++ already, bu
 
 # Terminology
 **Widget**
+
 Any piece of the user interface that wants to take up screenspace, and might also want to respond to some events. 
 
 **Screenspace**
+
 The physical space that the GUI is displayed on. Usually this means the amount of pixels in the 
 window for which we are displaying. Note: The reality is a bit more complicated because we want to take DPI into account.
 
 **Rect**
+
 A shorthand for rectangle. In the solution, this means a rectangle defined by position and extents.
 
 # The problem
@@ -38,6 +41,7 @@ I think it's best to start with an example. Let's create a very simple combinati
 ### Demonstrate how changes to a widgets content (or size) can affect widgets in different parts of the GUI
 
 # My solution - Conceptually
+
 ## Assumptions
 - Widgets always take up a rectangular shape on screen
 	- They can still be partially transparent and conditionally pass through events, making it seem that they are not rectangular from user perspective.
@@ -45,7 +49,9 @@ I think it's best to start with an example. Let's create a very simple combinati
 - Each rectangular space will end up to be pixel-aligned after calculations are complete.
 - All GUI surfaces (read: windows) are rectangular grids of pixels.
   - Additionally it has certain properties like DPI to determine how physically large the surface is.
+
 ## End of assumptions
+
 For my solution, I look at all GUIs as an N-tree. Each widget is viewed as a node, and widgets may also point to one or more child widgets. From now on, I will be using the word "node" and "widget" interchangeably. 
 
 I'm introducing a new container type that I will call the "RectCollection". The RectCollection is a short-lived data structure that essentially captures the entire GUI architecture in a moment of time, and stores the Rects of every relevant widget. It is reconstructed every time you need information regarding the sizes of widgets, such as when processing an event. It can be queried after the event, but it is effectively invalidated if anything is changed in the GUI architecture.
@@ -57,19 +63,22 @@ Processing an event requires three steps:
 
 This process will have to be repeated for every event. An important idea here is that at every stage, the information gathered for that widget is passed back to that widget at the later stage.
 
-**Gathering**
+## 1/3 : Gathering
+
 This is a bottom-to-top algorithm.
 
 During the gather stage we gather the SizeHint of each widget. At this point we have no idea which widgets will actually be displayed, so we just gather this for every single widget that can potentially be displayed. If it's impossible for the widget to be displayed this event, we can omit it. Parents will report their SizeHint as a "sum" of their children, how that sum is defined is specific to that Widget. This step will run in a bottom-up direction, starting with the children that are nested the most deeply into the hierarchy. 
 
-**Distributing**
+## 2/3 : Distributing
+
 This is a top-to-bottom algorithm.
 
 During the distribution stage we assign the actual Rects of each widget. During this stage, nodes can **only assign the Rects of their children, not itself**. This rule enforces that nodes can only rely on the screenspace that they are given by their parent, and not set an arbitrary size. At this point in time, we can start determining which widgets will be visible or not, and so some may be omitted.
 
 At this point in time, we have assembled all of the data necessary to perform some action. We now know the position and sizes of every Widgets Rect, and also in which order they appear in the Z order.
 
-**Run actual event**
+## 3/3 : Run event
+
 This is a top-to-bottom algorithm.
 
 **Unfinished:** ... Do stuff, send data down, widgets use return value to tell you if they did anything meaningful with the event...
